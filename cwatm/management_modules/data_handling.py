@@ -2528,6 +2528,32 @@ def returnBool(inBinding):
         msg = "Error 115: Value in: \"" + inBinding + "\" is not True or False! \nbut: " + b
         raise CWATMError(msg)
 
+def safeFloat(value):
+    """
+    Return a settings value as float if it is a number, unchanged otherwise.
+
+    Used by the water quality modules to tell a scalar setting from a file
+    path: ``isinstance(safeFloat(cbinding(key)), float)`` is True for a
+    number and False for a path (loadmap / readnetcdf2 branch).
+
+    Parameters
+    ----------
+    value : str, int, float or None
+        Raw settings value, usually the string returned by ``cbinding``.
+
+    Returns
+    -------
+    float or the input
+        ``float(value)`` when the value is a number or a numeric string
+        (including int and numpy floats); the value unchanged when it is a
+        non-numeric string, a path, None or anything ``float()`` rejects.
+    """
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return value
+
+
 def checkOption(inBinding,checkfirst = False):
     """
     Validate and process configuration option values.
