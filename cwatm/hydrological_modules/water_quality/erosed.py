@@ -413,7 +413,13 @@ class waterquality_erosed(object):
         
         # Calculate sed to channel and lag
         if checkOption('includeRunoffConcentration'):
-            runoffConcShare = divideArrays(self.var.runoff_conc, np.nansum(self.var.runoff_conc, axis = 0))
+            # runoff_conc has max(10, maxtime_runoff_conc) rows (runoff_concentration.py); only the
+            # first maxtime_runoff_conc rows are filled by the lag kernel, the rest hold stale
+            # copies. Take the share over the filled rows so that sedToStor matches
+            # sedRunoff_conc (maxtime_runoff_conc rows) and no sediment is placed in a row that
+            # is zeroed before it reaches the outlet.
+            nlag = self.var.maxtime_runoff_conc
+            runoffConcShare = divideArrays(self.var.runoff_conc[:nlag], np.nansum(self.var.runoff_conc[:nlag], axis = 0))
             
             sedToStor = self.var.sedToChannel * runoffConcShare
             
