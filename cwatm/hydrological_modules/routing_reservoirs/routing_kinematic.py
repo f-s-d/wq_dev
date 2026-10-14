@@ -288,8 +288,10 @@ class routing_kinematic(object):
         for i in range(self.var.n_fluxes):
             routed_mass_flow[i, down] = npareatotal(mass_flow[i, :], down)
         routed_mass_flow -= mass_flow
+        outlet_mass = mass_flow * (down == np.arange(down.shape[0])) # outlets drain to themselves: their outflow leaves the domain [kg/substep]
+        routed_mass_flow -= outlet_mass
 
-        return routed_mass_flow, resLakeInflowTmp
+        return routed_mass_flow, resLakeInflowTmp, outlet_mass
    
 
 
@@ -945,7 +947,9 @@ class routing_kinematic(object):
                 tmp_massFlow = tmp_massConc * np.tile(self.var.discharge, (self.var.n_fluxes, 1))
                 
                 # route flow downstream
-                channel_delta, self.var.resLakeInflowTmp = self.routeMassDown2(m_flowrate=tmp_massFlow, sec_per_timestep = self.var.dtRouting, lakesCond=resLakeInflowCondition, down=downdirID)
+                channel_delta, self.var.resLakeInflowTmp, outlet_mass = self.routeMassDown2(m_flowrate=tmp_massFlow, sec_per_timestep = self.var.dtRouting, lakesCond=resLakeInflowCondition, down=downdirID)
+                if self.var.includeErosed: self.var.outlet_sed += outlet_mass[self.var.sed_idx, :]
+                if self.var.includePhosphorus: self.var.outlet_P += outlet_mass[self.var.TDP_idx, :]; self.var.outlet_PP += outlet_mass[self.var.PP_idx, :]; self.var.outlet_orgP += outlet_mass[self.var.orgP_idx, :]
                 
                 #update down stream mass [kg/subtimestep]
                 tmp_massStock = tmp_massStock + channel_delta
