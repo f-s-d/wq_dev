@@ -258,13 +258,17 @@ class routing_kinematic(object):
 
         return tmp_x, resLakeInflowTmp, outlet
         
-    def routeMassDown2(self, m_flowrate, sec_per_timestep, lakesCond, down):
+    def routeMassDown2(self, m_flowrate, sec_per_timestep, lakesCond, down, mass_stock):
         
         '''
         m_flowrate: kg s-1
         sec_per_timestep: seconds per sub-daily routing timesteps
-        lakesCond: a conditional mask indicating if a cell is an inlet into a lake
+        lakesCond: a conditional mask indicating if a cell is a lake/reservoir cell
         down: map indicating the downstream cell.
+        mass_stock: [kg] channel mass stock of each cell before this substep's routing
+        
+        Lake cells route nothing downstream: their whole channel content (stock plus what arrives
+        from upstream in this substep) goes into the lake, so they hold no channel mass.
         
         Returns
         -------
@@ -283,13 +287,16 @@ class routing_kinematic(object):
         #x[:, outletid] = 0.
 
         if checkOption('includeWaterBodies'):
-            resLakeInflowTmp = mass_flow * lakesCond
-            mass_flow -= resLakeInflowTmp
+            mass_flow = np.where(lakesCond > 0, 0., mass_flow) # lake cells pass their mass to the lake, not downstream
         for i in range(self.var.n_fluxes):
             routed_mass_flow[i, down] = npareatotal(mass_flow[i, :], down)
         routed_mass_flow -= mass_flow
         outlet_mass = mass_flow * (down == np.arange(down.shape[0])) # outlets drain to themselves: their outflow leaves the domain [kg/substep]
         routed_mass_flow -= outlet_mass
+        if checkOption('includeWaterBodies'):
+            # whole content of lake cells (stock + inflow from upstream) goes into the lake; the cell is emptied
+            resLakeInflowTmp = np.where(lakesCond > 0, mass_stock + routed_mass_flow, 0.)
+            routed_mass_flow -= resLakeInflowTmp
 
         return routed_mass_flow, resLakeInflowTmp, outlet_mass
    
@@ -947,13 +954,14 @@ class routing_kinematic(object):
                 tmp_massFlow = tmp_massConc * np.tile(self.var.discharge, (self.var.n_fluxes, 1))
                 
                 # route flow downstream
-                channel_delta, self.var.resLakeInflowTmp, outlet_mass = self.routeMassDown2(m_flowrate=tmp_massFlow, sec_per_timestep = self.var.dtRouting, lakesCond=resLakeInflowCondition, down=downdirID)
+                channel_delta, self.var.resLakeInflowTmp, outlet_mass = self.routeMassDown2(m_flowrate=tmp_massFlow, sec_per_timestep = self.var.dtRouting, lakesCond=resLakeInflowCondition, down=downdirID, mass_stock=tmp_massStock)
                 if self.var.includeErosed: self.var.outlet_sed += outlet_mass[self.var.sed_idx, :]
                 if self.var.includePhosphorus: self.var.outlet_P += outlet_mass[self.var.TDP_idx, :]; self.var.outlet_PP += outlet_mass[self.var.PP_idx, :]; self.var.outlet_orgP += outlet_mass[self.var.orgP_idx, :]
                 
                 #update down stream mass [kg/subtimestep]
                 tmp_massStock = tmp_massStock + channel_delta
                 tmp_massStock = np.maximum(tmp_massStock, 0.0)
+                tmp_massStock = np.where(resLakeInflowCondition > 0, 0., tmp_massStock) # lake cells hold no channel mass (removes rounding residue)
                 ###
 
                 flagWaterBodies = checkOption('includeWaterBodies')
@@ -1082,6 +1090,11 @@ class routing_kinematic(object):
                         channel_sed = self.var.channel_sed_Dt, channel_sedConc = self.var.channel_sedConc, prf=self.var.prf, \
                         Q=self.var.discharge, A=self.var.crossArea, v = self.var.substepChannelStorage, csp=self.var.csp, spexp=self.var.spexp, 
                         Kch=self.var.Kch, Cch = self.var.Cch, Dt = self.var.dtRouting)
+                    if checkOption('includeWaterBodies'):
+                        # lake cells hold no channel mass: no bed deposition or erosion there
+                        sed_dep_dt = np.where(resLakeInflowCondition > 0, 0., sed_dep_dt)
+                        sed_deg_dt = np.where(resLakeInflowCondition > 0, 0., sed_deg_dt)
+                        self.var.channel_sed_Dt = np.where(resLakeInflowCondition > 0, 0., self.var.channel_sed_Dt)
 
                     # convert to kg/s
                     self.var.channel_sedDep += sed_dep_dt / self.var.dtRouting 
