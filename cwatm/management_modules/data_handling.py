@@ -2387,7 +2387,12 @@ def writeIniNetcdf(netfile,varlist, inputlist):
 
         # write values
         mapnp = maskinfo['maskall'].copy()
-        help = np.minimum(10e15,np.maximum(-9999., inputlist[i][:]))
+        # no upper cut: write the true value, but warn when it is huge or not finite
+        large = ~np.isfinite(inputlist[i][:]) | (inputlist[i][:] > 1e15)
+        if large.any():
+            msg = "Warning: initial value: " + varname + " is above 1e15 or not finite in " + str(int(large.sum())) + " cells - written as it is"
+            print(CWATMWarning(msg))
+        help = np.maximum(-9999., inputlist[i][:])
         mapnp[~maskinfo['maskflat']] = help
         #mapnp = mapnp.reshape(maskinfo['shape']).data
         mapnp = mapnp.reshape(maskinfo['shape'])

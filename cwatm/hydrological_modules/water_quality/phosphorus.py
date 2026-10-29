@@ -286,7 +286,7 @@ class waterquality_phosphorus(object):
         
         self.var.channel_PConc = self.var.load_initial('channel_PConc', default = globals.inZero.copy())
         self.var.channel_PPConc = self.var.load_initial('channel_PPConc', default = globals.inZero.copy())
-        self.var.channel_orgPConc = self.var.load_initial('channel_PPConc', default = globals.inZero.copy())
+        self.var.channel_orgPConc = self.var.load_initial('channel_orgPConc', default = globals.inZero.copy())
 
         self.var.outlet_P = globals.inZero.copy()
         self.var.outlet_PP = globals.inZero.copy()
