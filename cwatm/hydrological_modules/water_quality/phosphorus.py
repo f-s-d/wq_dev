@@ -192,7 +192,7 @@ class waterquality_phosphorus(object):
         else:
             # if self.var.initLoadFile is set to True
             soil_vars = ["soil_P_inactive1", "soil_P_inactive2", "soil_P_inactive3", "soil_P_labile1", "soil_P_labile2",\
-                    "soil_P_labile3", "soil_P_dissolved1", "soil_P_dissolved2", "soil_P_dissolved3"]
+                    "soil_P_labile3", "soil_P_dissolved1", "soil_P_dissolved2", "soil_P_dissolved3", "EPC1", "EPC2", "EPC3"]
             for var in soil_vars:
                 for lc_idx in range(4):
                     vars(self.var)[var][lc_idx, :] = self.var.load_initial(var + '_' + str(lc_idx), default = globals.inZero.copy())
@@ -230,6 +230,11 @@ class waterquality_phosphorus(object):
         self.var.resuspension_P_cal = globals.inZero.copy() + 1.
         if 'resuspension_P_calibration' in binding:
             self.var.resuspension_P_cal =  globals.inZero.copy() + loadmap('resuspension_P_calibration')
+            # at most 1: a deposition - resuspension cycle must not return more P per kg sediment than it carried
+            if np.nanmax(self.var.resuspension_P_cal) > 1.:
+                msg = "Warning: resuspension_P_calibration is above 1 (max " + str(np.nanmax(self.var.resuspension_P_cal)) + ") - set to 1"
+                print(CWATMWarning(msg))
+                self.var.resuspension_P_cal = np.minimum(self.var.resuspension_P_cal, 1.)
             
         # load runoff P adjustment coefficient
         self.var.runoff_Padj = globals.inZero.copy() + 1.
@@ -270,6 +275,8 @@ class waterquality_phosphorus(object):
         # channel phsophorus [kg | kg/s]
         # PP concentration over the last  60 days for resuspension 
         self.var.channel_PPConc_lt = np.tile(globals.inZero.copy(), (60, 1))
+        for i in range(60):
+            self.var.channel_PPConc_lt[i] = self.var.load_initial('channel_PPConc_lt', default = globals.inZero.copy(), number = i+1)
 
         
         self.var.channel_P = self.var.load_initial('channel_P', default = globals.inZero.copy())

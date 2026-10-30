@@ -463,6 +463,9 @@ class routing_kinematic(object):
         if self.var.includeWaterQuality:
             if checkOption('includeWaterBodies'):
                 self.var.resLakeInflowTmp = np.tile(globals.inZero.copy(), (self.var.n_fluxes, 1))
+                # lake inflow of the last sub-step of the previous day; it enters the lake in the first sub-step of this day
+                for i in range(self.var.n_fluxes):
+                    self.var.resLakeInflowTmp[i] = self.var.load_initial('resLakeInflowTmp', default = globals.inZero.copy(), number = i+1)
             
 
 
@@ -1022,7 +1025,7 @@ class routing_kinematic(object):
                     channel_PP_conc0 = np.where(self.var.channel_sed_Dt > 1, channel_PP_conc0, 0.)
 
                     # Physical ceiling: Max P content in river sediment is ~0.005 kg P / kg Sed (0.5% P by weight)
-                    #MAX_P_SED_RATIO = 0.005
+                    MAX_P_SED_RATIO = 0.005 # applied to the resuspension ratio only, see below
                     #print(np.nanmax(channel_PP_conc0))
                     # Require sufficient sediment pool (e.g. > 10 kg) and cap at physical maximum
                     #channel_PP_conc0 = np.where(
@@ -1131,6 +1134,8 @@ class routing_kinematic(object):
 
                     else:
                         channel_PP_lt = np.nanmean(self.var.channel_PPConc_lt, axis = 0)
+                    # cap the P content of resuspended sediment at the physical maximum; deposition keeps the actual ratio
+                    channel_PP_lt = np.minimum(channel_PP_lt, MAX_P_SED_RATIO)
 
                     self.var.channel_PP_lt_sum = channel_PP_lt.copy()
 
@@ -1280,6 +1285,7 @@ class routing_kinematic(object):
                 if checkOption('includeWaterBodies'): 
                     np.put(self.var.resLake_P, self.var.decompress_LR, self.var.resLake_mass[self.var.TDP_idx, :])
                     np.put(self.var.resLake_PP, self.var.decompress_LR, self.var.resLake_mass[self.var.PP_idx, :])
+                    np.put(self.var.resLake_orgP, self.var.decompress_LR, self.var.resLake_mass[self.var.orgP_idx, :])
                     #np.put(self.var.resLake_inactiveP, self.var.decompress_LR, self.var.resLake_mass[3, :])
                     
                     # TDP Lake concentration [kg/m3]
@@ -1314,9 +1320,10 @@ class routing_kinematic(object):
                     channel_PP_conc0 = divideValues(self.var.channel_PP_Dt, self.var.channel_sed_Dt)
                     channel_PP_conc0 = np.where(self.var.channel_sed_Dt > 1, channel_PP_conc0, 0.)
                     
-                    # update longterm PP concentration
-                    self.var.channel_PPConc_lt [1:, :] = self.var.channel_PPConc_lt [0:-1, :]
-                    self.var.channel_PPConc_lt [0, :] = channel_PP_conc0.copy()
+                    # update longterm PP concentration - only in cells with flow; the memory of other cells is left unchanged
+                    flowing = self.var.discharge > self.var.minDischarge
+                    self.var.channel_PPConc_lt [1:, :] = np.where(flowing, self.var.channel_PPConc_lt [0:-1, :], self.var.channel_PPConc_lt [1:, :])
+                    self.var.channel_PPConc_lt [0, :] = np.where(flowing, channel_PP_conc0, self.var.channel_PPConc_lt [0, :])
                     
                     #self.var.channel_inactivePConc = np.where(self.var.waterBodyID > 0, lakeResOutflowPInactiveConc, self.var.channel_inactivePConc)
                     #self.var.channel_P = self.var.channel_PConc * self.var.discharge

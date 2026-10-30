@@ -486,14 +486,24 @@ class initcondition(object):
                 Var2 = ["channel_P", "channel_P_Dt", "channel_PP", "channel_PP_Dt", "channel_orgP", "channel_orgP_Dt", "channel_PConc", "channel_PPConc",\
                         "channel_orgPConc", "resLake_P", "resLake_PP", "resLake_PConc", "resLake_PPConc", "resLake_orgP", "resLake_orgPConc"]
                 soil_vars = ["soil_P_inactive1", "soil_P_inactive2", "soil_P_inactive3",\
-                             "soil_P_labile1", "soil_P_labile2", "soil_P_labile3", "soil_P_dissolved1", "soil_P_dissolved2", "soil_P_dissolved3"]
+                             "soil_P_labile1", "soil_P_labile2", "soil_P_labile3", "soil_P_dissolved1", "soil_P_dissolved2", "soil_P_dissolved3",\
+                             "EPC1", "EPC2", "EPC3"]
                 for lc_idx in range(4):
                     for var in soil_vars:
                        Var1.append(var + '_' + str(lc_idx))
                        Var2.append(var + '[' + str(lc_idx)+ ']')
+                # PP per kg sediment of the last 60 days with flow, for resuspension
+                for i in range(60):
+                    Var1.append("channel_PPConc_lt" + str(i + 1))
+                    Var2.append("channel_PPConc_lt[" + str(i) + "]")
                        
                 initCondVar.extend(Var1)
                 initCondVarValue.extend(Var2)
+            # lake inflow of the last routing sub-step of the day, which enters the lake the next day
+            if checkOption('includeWaterBodies'):
+                for i in range(self.var.n_fluxes):
+                    initCondVar.append("resLakeInflowTmp" + str(i + 1))
+                    initCondVarValue.append("resLakeInflowTmp[" + str(i) + "]")
         
         if 'includeWastewater' in option:
             if checkOption('includeWastewater'):

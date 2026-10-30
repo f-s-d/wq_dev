@@ -209,6 +209,15 @@ class water_quality(object):
 
                 self.erosed.initial()
 
+            # lake stocks from the initial maps, which hold them at the lake outlet cells (0 on a cold start)
+            if checkOption('includeWaterBodies'):
+                if self.var.includeErosed:
+                    self.var.resLake_mass[self.var.sed_idx] = np.compress(self.var.compress_LR, self.var.resLake_sed)
+                if self.var.includePhosphorus:
+                    self.var.resLake_mass[self.var.TDP_idx] = np.compress(self.var.compress_LR, self.var.resLake_P)
+                    self.var.resLake_mass[self.var.PP_idx] = np.compress(self.var.compress_LR, self.var.resLake_PP)
+                    self.var.resLake_mass[self.var.orgP_idx] = np.compress(self.var.compress_LR, self.var.resLake_orgP)
+
             if self.var.includePhosphorus:
                 # sum total soil P stocks [kg / m2]
                 for variable in phosphorusVarsSum:
