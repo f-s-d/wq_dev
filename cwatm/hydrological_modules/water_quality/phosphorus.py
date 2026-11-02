@@ -514,16 +514,16 @@ class waterquality_phosphorus(object):
             
             # grassland - only to managed grassland - kg ha-1 year-1
             if isinstance(safeFloat(cbinding('P_manure_grassland')), float):
-                grasslandInputManure = globals.inZero.copy() + loadmap('P_manure_grassland') * self.var.perha_to_pergrid 
+                grasslandInputManure = globals.inZero.copy() + loadmap('P_manure_grassland') * self.var.perha_to_pergrid * self.var.fracPasture
             else:
-                grasslandInputManure = readnetcdf2('P_manure_grassland', wd_date, useDaily='yearly', value='manure_p_GrasslandInput') * self.var.perha_to_pergrid * self.var.fracPasture / dateVar['daysInYear']
+                grasslandInputManure = readnetcdf2('P_manure_grassland', wd_date, useDaily='yearly', value='manure_p_GrasslandInput') * self.var.perha_to_pergrid * self.var.fracPasture
                                     
                                     
             self.var.grasslandInputManure_current = 0.7 * grasslandInputManure + self.var.grasslandInputManure_last
             self.var.grasslandInputManure_last = 0.1 * grasslandInputManure
 
             # rainfed
-            cropland_rf_manure = self.var.croplandInputFert * (self.var.fracRainfed_Other + self.var.fracRainfed_Rice)
+            cropland_rf_manure = croplandInputManure * (self.var.fracRainfed_Other + self.var.fracRainfed_Rice)
             
             self.var.cropland_rf_manure_current = 0.7 * cropland_rf_manure + self.var.cropland_rf_manure_last
             self.var.cropland_rf_manure_last = 0.1 * cropland_rf_manure
@@ -541,9 +541,9 @@ class waterquality_phosphorus(object):
         self.var.grasslandInputManure_current_day = globals.inZero.copy()
         
         # Load monthly weights (LGP)
-        if globals.dateVar['newStart'] or globals.dateVar['newYear']:
-            self.var.lgp_weights_rainfed = readnetcdf2('monthly_lgp_weights', wd_date, useDaily='monthly', value='rainfed')
-            self.var.lgp_weights_irrigated = readnetcdf2('monthly_lgp_weights', wd_date, useDaily='monthly', value='irrigated')
+        if globals.dateVar['newStart'] or globals.dateVar['newMonth']:
+            self.var.lgp_weights_rainfed = readnetcdf2('monthly_lgp_weights', wd_date, useDaily='month', value='rainfed')
+            self.var.lgp_weights_irrigated = readnetcdf2('monthly_lgp_weights', wd_date, useDaily='month', value='irrigated')
         
         
         if (dateVar['currDate'].day in [1,11,21]):
@@ -558,7 +558,7 @@ class waterquality_phosphorus(object):
             self.var.cropland_rf_export_day = self.var.cropland_rf_export * self.var.lgp_weights_rainfed / 3
             
         # grassland budget
-        self.var.grasslandInputManure_current_day = self.var.grasslandInputManure_current / 365
+        self.var.grasslandInputManure_current_day = self.var.grasslandInputManure_current / dateVar['daysInYear']
         
         # Prepare inputs to soil
         cropLandIrr_day = self.var.croplandInputFert_day + self.var.croplandInputManure_current_day - self.var.croplandExportTotal_day

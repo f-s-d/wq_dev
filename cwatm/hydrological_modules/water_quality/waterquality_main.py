@@ -320,11 +320,11 @@ class water_quality(object):
             
             # sum total soil P stocks [kg / m2] 
             phosphorusVarsSum = ['soil_P_labile1', 'soil_P_labile2', 'soil_P_labile3', 'soil_P_dissolved1', 'soil_P_dissolved2',\
-                                'soil_P_dissolved3', 'EPC1', 'EPC2', 'EPC3', 'soil_P_input1', 'soil_P_input2', 'irrigation_P_Applied',\
+                                'soil_P_dissolved3', 'EPC1', 'EPC2', 'EPC3', 'soil_P_input1', 'soil_P_input2',\
                                 'soil_P_mineralization1', 'soil_P_mineralization2', 'soil_P_mineralization3', 'soil_P_immobilization1',\
                                 'soil_P_immobilization2','soil_P_immobilization3', 'atm_P_deposition']
                                 
-            for variable in phosphorusVarsSum:
+            for variable in [v for v in phosphorusVarsSum if v not in ('soil_P_input1', 'soil_P_input2')]:
                 # make sure no negative values
                 vars(self.var)[variable] = np.where(vars(self.var)[variable] < 0., 0. , vars(self.var)[variable])
                 
