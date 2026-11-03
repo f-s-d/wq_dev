@@ -623,7 +623,7 @@ class landcoverType(object):
                 vars(self.var)["sum_" + variable] += self.var.fracVegCover[No] * vars(self.var)[variable][No]
 
         # for paddy irrigation flooded paddy fields
-        self.var.topwater = self.var.load_initial("topwater", default=0.) * globals.inZero.copy()
+        self.var.topwater = self.var.load_initial("topwater", default=0.) + globals.inZero.copy()
         self.var.sum_topwater = self.var.fracVegCover[2] * self.var.topwater
         self.var.sum_soil = self.var.sum_w1 + self.var.sum_w2 + self.var.sum_w3 + self.var.sum_topwater
         self.var.totalSto = self.var.SnowCover + self.var.sum_interceptStor + self.var.sum_soil
