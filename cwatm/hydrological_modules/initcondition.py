@@ -492,7 +492,7 @@ class initcondition(object):
                     for var in soil_vars:
                        Var1.append(var + '_' + str(lc_idx))
                        Var2.append(var + '[' + str(lc_idx)+ ']')
-                # PP per kg sediment of the last 60 days with flow, for resuspension
+                # PP per kg sediment deposited on the last 60 days with deposition, for resuspension
                 for i in range(60):
                     Var1.append("channel_PPConc_lt" + str(i + 1))
                     Var2.append("channel_PPConc_lt[" + str(i) + "]")

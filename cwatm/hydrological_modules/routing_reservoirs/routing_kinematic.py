@@ -1319,13 +1319,14 @@ class routing_kinematic(object):
                     #self.var.channel_P = self.var.channel_PConc * self.var.discharge
                     #self.var.channel_PP = self.var.channel_PPConc * self.var.discharge
                     
-                    channel_PP_conc0 = divideValues(self.var.channel_PP_Dt, self.var.channel_sed_Dt)
-                    channel_PP_conc0 = np.where(self.var.channel_sed_Dt > 1, channel_PP_conc0, 0.)
+                    # P content of the sediment deposited today [kg P / kg sediment]
+                    sed_deposited = self.var.channel_sedDep * self.var.dtRouting
+                    channel_PP_conc0 = divideValues(self.var.channel_PP_deposition, sed_deposited)
                     
-                    # update longterm PP concentration - only in cells with flow; the memory of other cells is left unchanged
-                    flowing = self.var.discharge > self.var.minDischarge
-                    self.var.channel_PPConc_lt [1:, :] = np.where(flowing, self.var.channel_PPConc_lt [0:-1, :], self.var.channel_PPConc_lt [1:, :])
-                    self.var.channel_PPConc_lt [0, :] = np.where(flowing, channel_PP_conc0, self.var.channel_PPConc_lt [0, :])
+                    # update longterm PP concentration - only in cells with more than 1 kg deposition today; the memory of other cells is left unchanged
+                    depositing = sed_deposited > 1
+                    self.var.channel_PPConc_lt [1:, :] = np.where(depositing, self.var.channel_PPConc_lt [0:-1, :], self.var.channel_PPConc_lt [1:, :])
+                    self.var.channel_PPConc_lt [0, :] = np.where(depositing, channel_PP_conc0, self.var.channel_PPConc_lt [0, :])
                     
                     #self.var.channel_inactivePConc = np.where(self.var.waterBodyID > 0, lakeResOutflowPInactiveConc, self.var.channel_inactivePConc)
                     #self.var.channel_P = self.var.channel_PConc * self.var.discharge
