@@ -492,6 +492,10 @@ class initcondition(object):
                     for var in soil_vars:
                        Var1.append(var + '_' + str(lc_idx))
                        Var2.append(var + '[' + str(lc_idx)+ ']')
+                # manure carried over to the next year (phosphorus.py, new year)
+                for var in ["croplandInputManure_last", "cropland_rf_manure_last", "grasslandInputManure_last"]:
+                    Var1.append(var)
+                    Var2.append(var)
                 # PP per kg sediment deposited on the last 60 days with deposition, for resuspension
                 for i in range(60):
                     Var1.append("channel_PPConc_lt" + str(i + 1))

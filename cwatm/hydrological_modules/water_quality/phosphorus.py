@@ -259,10 +259,10 @@ class waterquality_phosphorus(object):
         self.var.PntSource_NetPload_channel = globals.inZero.copy()
         self.var.PntSource_NetPload_soil23 = globals.inZero.copy()
         
-        # soil p budget
-        self.var.croplandInputManure_last = globals.inZero.copy()
-        self.var.cropland_rf_manure_last = globals.inZero.copy()
-        self.var.grasslandInputManure_last = globals.inZero.copy()
+        # soil p budget - manure carried over to the next year, saved with the state
+        self.var.croplandInputManure_last = self.var.load_initial('croplandInputManure_last', default = globals.inZero.copy())
+        self.var.cropland_rf_manure_last = self.var.load_initial('cropland_rf_manure_last', default = globals.inZero.copy())
+        self.var.grasslandInputManure_last = self.var.load_initial('grasslandInputManure_last', default = globals.inZero.copy())
         
         # runoff, interflow, baseflow P [kg]
         self.var.directRunoff_P = globals.inZero.copy()
