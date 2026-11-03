@@ -955,6 +955,8 @@ class routing_kinematic(object):
                 
                 # calculate outflow from each cell [kg s-1]
                 tmp_massFlow = tmp_massConc * np.tile(self.var.discharge, (self.var.n_fluxes, 1))
+                # a cell sends out at most its stock in one substep (Q * dtRouting > V in short or fast reaches)
+                tmp_massFlow = np.minimum(tmp_massFlow, tmp_massStock / self.var.dtRouting)
                 
                 # route flow downstream
                 channel_delta, self.var.resLakeInflowTmp, outlet_mass = self.routeMassDown2(m_flowrate=tmp_massFlow, sec_per_timestep = self.var.dtRouting, lakesCond=resLakeInflowCondition, down=downdirID, mass_stock=tmp_massStock)
